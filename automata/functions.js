@@ -4,7 +4,7 @@
 // 17 January 2014 (Adapted from Mathematica code written in June 2013)
 // Please see README.md for a description of the game
 
-var row, rows, columns, rules, score, rows_left, reveal1, reveal2, current_row;
+var row, rows, columns, rules, score, rows_left, reveal, current_row;
 
 var initialize_vars = function(r, c) {
 	row = 0; // the current row number
@@ -15,8 +15,7 @@ var initialize_vars = function(r, c) {
 	compute_score(current_row); // compute the score for the current (first) row
 	rules = initialize_rules(); // initialize the automata rules
 	rows_left = r-1; // the number of rows left to be revealed
-	reveal1 = 3; // the number of turns until Player 1 must reveal a row
-	reveal2 = 3; // the number of turns until Player 2 must reveal a row
+	reveal = [2,2]; // the number of turns until each player must reveal a row
 }
 
 // computes the score given the current row
@@ -66,6 +65,112 @@ var initialize_rules = function() {
 	// call initialize_row with a parameter of 4
 	var squares = initialize_row(4);
 	return squares;
+}
+
+// calculates the next row of the board, based on the current state of the board (rules and current squares)
+var calculate_next_row = function() {
+	var next_row = [];
+	// loop through the array of current squares, applying the correct automata rule to each pair
+	for(var i = 0; i < columns; i++) {
+		// get the relevant pair of squares (loops back around)
+		var pair = [current_row[i], current_row[(i+1)%columns];
+		// apply the correct automata rule to these squares
+		next_row.push(compute_rule(pair));
+	}
+	// update global parameters
+	current_row = next_row;
+	row++;
+	rows_left--;
+	compute_score(current_row);
+}
+
+// computes the correct next square given a pair of current squares
+var compute_rule = function(pair) {
+	// first, compute the correct automata replacement rule
+	var automata_rule = 2*pair[0] + pair[1]; // we use a variant of Stephen Wolfram's numbering system for automata rules
+	// finally, return the corresponding replacement
+	return rules[automata_rule];
+}
+
+// changes the given rule
+var change_rule = function(rule_number) {
+	rules[rule_number] = opposite(rules[rule_number]);
+}
+
+// returns the opposite binary value
+var opposite = function(binary_value) {
+	return 1 - binary_value;
+	// also could have done
+	// return (binary_value+1)%2
+}
+
+// changes a set of squares
+var change_squares = function(squares) {
+	for(var i = 0; i < min(squares.length, 5); i++) {
+		current_row[squares[i]] = opposite(current_row[squares[i]]);
+	}
+}
+
+// computes a player's turn
+// player is the player number (0 or 1)
+// turn_type is a string representing what the player wants to do (either "reveal", "squares", or "rule")
+// parameter is an extra parameter for calculations, if needed
+// returns True if the turn was successful, False if something went wrong
+var compute_turn = function(player, turn_type, parameter) {
+	if(turn_type == "reveal") {
+		calculate_next_row();
+		reveal[player] = 2;
+		return true;
+	}
+	else {
+		// check to see if the player must reveal a row
+		if(reveal[player] == 0) {
+			console.log("You must reveal the next row this turn.");
+			return false;
+		}
+		// otherwise, continue
+		if(turn_type == "squares") {
+			// check if the player entered a valid number of squares to change
+			if(parameter.length == 0 || parameter.length > 5) {
+				console.log("Must change between 1 and 5 squares.");
+				return false;
+			}
+			// check if the player entered valid square numbers to change
+			if(!validNumbers(parameter)) {
+				console.log("Some square numbers were invalid.");
+				return false;
+			}
+			// if all this is good, change the given squares
+			change_squares(parameter);
+			reveal[player]--;
+			return true;
+		}
+		else if(turn_type == "rule") {
+			// check if the player entered a valid rule number
+			if(parameter < 0 || parameter > 3) {
+				console.log("Rule number must be between 0 and 3");
+				return false;
+			}
+			// if this is valid, change the given rule
+			change_rule(parameter);
+			reveal[player]--;
+			return true;
+		}
+		else {
+			// player didn't enter a valid turn type
+			console.log("Invalid turn type.");
+			return false;
+		}
+	}
+}
+
+// checks to see if a player entered valid square positions
+var validNumbers = function(squares) {
+	for(var i = 0; i < squares.length; i++) {
+		if(squares[i] < 0 || squares[i] >= columns)
+			return false;
+	}
+	return true;
 }
 
 
