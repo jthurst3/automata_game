@@ -11,4 +11,6 @@ in the last row are of his color.
 Initialization:
 The game starts with the first row colored with half the squares white and half the squares black. Each
 successive row is then colored according to four rules, called the "automata rules". Each rule is represented
-by a pair of white and black squares, and a corresponding white or black square...
+by a pair of white and black squares, and a corresponding white or black square. For example, Rule 1 might
+specify that if there are two consecutive white squares, the next row will contain a black square under the
+first white square. 
